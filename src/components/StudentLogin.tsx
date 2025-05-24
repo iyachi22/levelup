@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 interface StudentLoginProps {
   onLogin: () => void;
@@ -15,15 +15,7 @@ const StudentLogin: React.FC<StudentLoginProps> = ({ onLogin, onBack }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [registerData, setRegisterData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    university: '',
-    field: ''
-  });
+  // Removed registration state as it's no longer needed
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,16 +27,7 @@ const StudentLogin: React.FC<StudentLoginProps> = ({ onLogin, onBack }) => {
     }, 1500);
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    setTimeout(() => {
-      setIsLoading(false);
-      onLogin();
-    }, 1500);
-  };
-
+  // Removed handleRegister function as it's no longer needed
   return (
     <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/20"></div>
@@ -63,14 +46,7 @@ const StudentLogin: React.FC<StudentLoginProps> = ({ onLogin, onBack }) => {
         </CardHeader>
         
         <CardContent>
-          <Tabs defaultValue="login" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Connexion</TabsTrigger>
-              <TabsTrigger value="register">Inscription</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
@@ -112,100 +88,6 @@ const StudentLogin: React.FC<StudentLoginProps> = ({ onLogin, onBack }) => {
                   )}
                 </Button>
               </form>
-            </TabsContent>
-            
-            <TabsContent value="register">
-              <form onSubmit={handleRegister} className="space-y-4">
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">Prénom</Label>
-                    <Input
-                      id="firstName"
-                      type="text"
-                      placeholder="put your first name"
-                      value={registerData.firstName}
-                      onChange={(e) => setRegisterData(prev => ({...prev, firstName: e.target.value}))}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Nom</Label>
-                    <Input
-                      id="lastName"
-                      type="text"
-                      placeholder="put your last name"
-                      value={registerData.lastName}
-                      onChange={(e) => setRegisterData(prev => ({...prev, lastName: e.target.value}))}
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="registerEmail">Email</Label>
-                  <Input
-                    id="registerEmail"
-                    type="email"
-                    placeholder="put your email"
-                    value={registerData.email}
-                    onChange={(e) => setRegisterData(prev => ({...prev, email: e.target.value}))}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="university">Université</Label>
-                  <Input
-                    id="university"
-                    type="text"
-                    placeholder="put your university"
-                    value={registerData.university}
-                    onChange={(e) => setRegisterData(prev => ({...prev, university: e.target.value}))}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="field">Domaine d'études</Label>
-                  <Input
-                    id="field"
-                    type="text"
-                    placeholder="Informatique"
-                    value={registerData.field}
-                    onChange={(e) => setRegisterData(prev => ({...prev, field: e.target.value}))}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="registerPassword">Mot de passe</Label>
-                  <Input
-                    id="registerPassword"
-                    type="password"
-                    placeholder="••••••••"
-                    value={registerData.password}
-                    onChange={(e) => setRegisterData(prev => ({...prev, password: e.target.value}))}
-                    required
-                  />
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  className="w-full mt-6 bg-green-500 hover:bg-green-600 transition-all duration-200 hover:scale-105"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Inscription...</span>
-                    </div>
-                  ) : (
-                    "S'inscrire"
-                  )}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
           
           <Button 
             type="button" 
