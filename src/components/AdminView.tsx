@@ -1,11 +1,14 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 interface User {
   id: number;
@@ -14,6 +17,17 @@ interface User {
   role: 'student' | 'company';
   status: 'active' | 'inactive';
   joinDate: string;
+}
+
+interface Scholarship {
+  id: number;
+  title: string;
+  description: string;
+  requirements: string;
+  amount: string;
+  deadline: string;
+  status: 'active' | 'inactive';
+  applications: number;
 }
 
 interface Feedback {
@@ -37,6 +51,44 @@ const AdminView: React.FC = () => {
     { id: 5, name: "DataCorp", email: "rh@datacorp.dz", role: "company", status: "active", joinDate: "2024-01-08" }
   ]);
 
+  const [scholarships, setScholarships] = useState<Scholarship[]>(() => {
+    const saved = localStorage.getItem('scholarships');
+    return saved ? JSON.parse(saved) : [
+      {
+        id: 1,
+        title: 'Bourse d\'excellence',
+        description: 'Bourse pour les étudiants ayant obtenu une moyenne supérieure à 16/20',
+        requirements: 'Moyenne > 16, Lettre de motivation, Relevés de notes',
+        amount: '5000 DZD/mois',
+        deadline: '2024-06-30',
+        status: 'active',
+        applications: 3
+      },
+      {
+        id: 2,
+        title: 'Bourse sociale',
+        description: 'Aide financière pour les étudiants issus de familles défavorisées',
+        requirements: 'Justificatif de revenus, Situation familiale',
+        amount: '3000 DZD/mois',
+        deadline: '2024-07-15',
+        status: 'active',
+        applications: 5
+      }
+    ];
+  });
+
+  const [isScholarshipDialogOpen, setIsScholarshipDialogOpen] = useState(false);
+  const [editingScholarship, setEditingScholarship] = useState<Scholarship | null>(null);
+  const [newScholarship, setNewScholarship] = useState<Partial<Scholarship>>({
+    title: '',
+    description: '',
+    requirements: '',
+    amount: '',
+    deadline: '',
+    status: 'active',
+    applications: 0
+  });
+
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([
     { id: 1, user: "Yasmine B.", message: "Excellente plateforme! J'ai trouvé mon stage rapidement.", rating: 5, date: "2024-01-15", type: "compliment" },
     { id: 2, user: "Ahmed K.", message: "Il serait bien d'ajouter un système de notification push.", rating: 4, date: "2024-01-14", type: "suggestion" },
@@ -49,9 +101,9 @@ const AdminView: React.FC = () => {
     companies: users.filter(u => u.role === 'company').length,
     totalUsers: users.length,
     activeOffers: 15,
-    activeScholarships: 7,
+    activeScholarships: scholarships.filter(s => s.status === 'active').length,
     totalApplications: 42,
-    scholarshipApplications: 18,
+    scholarshipApplications: scholarships.reduce((sum, s) => sum + s.applications, 0),
     successfulMatches: 8,
     scholarshipMatches: 3
   };
@@ -109,6 +161,75 @@ const AdminView: React.FC = () => {
 
   const getRatingStars = (rating: number) => {
     return '⭐'.repeat(rating) + '☆'.repeat(5 - rating);
+  };
+
+  // Save scholarships to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('scholarships', JSON.stringify(scholarships));
+  }, [scholarships]);
+
+  const handleAddScholarship = () => {
+    const newId = Math.max(0, ...scholarships.map(s => s.id)) + 1;
+    const scholarshipToAdd: Scholarship = {
+      id: newId,
+      title: newScholarship.title || 'Nouvelle bourse',
+      description: newScholarship.description || '',
+      requirements: newScholarship.requirements || '',
+      amount: newScholarship.amount || '0 DZD/mois',
+      deadline: newScholarship.deadline || new Date().toISOString().split('T')[0],
+      status: 'active',
+      applications: 0
+    };
+
+    setScholarships([...scholarships, scholarshipToAdd]);
+    setNewScholarship({
+      title: '',
+      description: '',
+      requirements: '',
+      amount: '',
+      deadline: '',
+      status: 'active',
+      applications: 0
+    });
+    setIsScholarshipDialogOpen(false);
+    toast({
+      title: 'Bourse ajoutée',
+      description: 'La bourse a été ajoutée avec succès.',
+    });
+  };
+
+  const handleUpdateScholarship = () => {
+    if (!editingScholarship) return;
+    
+    setScholarships(scholarships.map(s => 
+      s.id === editingScholarship.id ? { ...editingScholarship } : s
+    ));
+    
+    setEditingScholarship(null);
+    toast({
+      title: 'Bourse mise à jour',
+      description: 'Les modifications ont été enregistrées.',
+    });
+  };
+
+  const handleDeleteScholarship = (id: number) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette bourse ?')) {
+      setScholarships(scholarships.filter(s => s.id !== id));
+      toast({
+        title: 'Bourse supprimée',
+        description: 'La bourse a été supprimée avec succès.',
+      });
+    }
+  };
+
+  const toggleScholarshipStatus = (id: number) => {
+    setScholarships(scholarships.map(s => 
+      s.id === id ? { ...s, status: s.status === 'active' ? 'inactive' : 'active' } : s
+    ));
+  };
+
+  const openEditDialog = (scholarship: Scholarship) => {
+    setEditingScholarship(JSON.parse(JSON.stringify(scholarship)));
   };
 
   return (
@@ -285,51 +406,116 @@ const AdminView: React.FC = () => {
 
         <TabsContent value="bourses" className="space-y-6">
           <div>
-            <h3 className="text-xl font-semibold mb-2">Gestion des Bourses</h3>
-            <p className="text-gray-600">Gérez les bourses d'études disponibles</p>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Gestion des Bourses</h3>
+            <p className="text-gray-600">Gérez les bourses d'études disponibles pour les étudiants</p>
           </div>
 
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Liste des Bourses</CardTitle>
-                <Button>
-                  <span>➕</span>
-                  <span className="ml-2">Ajouter une bourse</span>
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border
-                flex items-center justify-center p-12 text-center text-muted-foreground">
-                <div className="space-y-2">
-                  <div className="text-4xl">🏆</div>
-                  <p className="font-medium">Aucune bourse pour le moment</p>
-                  <p className="text-sm">Commencez par ajouter votre première bourse d'études</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h4 className="text-lg font-semibold">Liste des Bourses</h4>
+              <p className="text-sm text-muted-foreground">
+                {scholarships.length} bourse(s) enregistrée(s)
+              </p>
+            </div>
+            <Button onClick={() => {
+              setEditingScholarship(null);
+              setNewScholarship({
+                title: '',
+                description: '',
+                requirements: '',
+                amount: '',
+                deadline: '',
+                status: 'active',
+                applications: 0
+              });
+              setIsScholarshipDialogOpen(true);
+            }}>
+              <span>➕</span>
+              <span className="ml-2">Nouvelle bourse</span>
+            </Button>
+          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Statistiques des Bourses</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 border rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">{stats.activeScholarships}</div>
-                <p className="text-sm text-muted-foreground">Bourses actives</p>
-              </div>
-              <div className="p-4 border rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">{stats.scholarshipApplications}</div>
-                <p className="text-sm text-muted-foreground">Candidatures reçues</p>
-              </div>
-              <div className="p-4 border rounded-lg">
-                <div className="text-2xl font-bold text-green-600">{stats.scholarshipMatches}</div>
-                <p className="text-sm text-muted-foreground">Bourses attribuées</p>
-              </div>
-            </CardContent>
-          </Card>
+          {scholarships.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center p-12 text-center">
+                <div className="text-6xl mb-4">🏆</div>
+                <h3 className="text-xl font-semibold mb-2">Aucune bourse pour le moment</h3>
+                <p className="text-muted-foreground mb-6">Commencez par ajouter votre première bourse d'études</p>
+                <Button onClick={() => setIsScholarshipDialogOpen(true)}>
+                  Ajouter une bourse
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              <Card>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Titre</TableHead>
+                      <TableHead>Montant</TableHead>
+                      <TableHead>Date limite</TableHead>
+                      <TableHead>Candidatures</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {scholarships.map((scholarship) => (
+                      <TableRow key={scholarship.id}>
+                        <TableCell className="font-medium">{scholarship.title}</TableCell>
+                        <TableCell>{scholarship.amount}</TableCell>
+                        <TableCell>{new Date(scholarship.deadline).toLocaleDateString('fr-FR')}</TableCell>
+                        <TableCell>{scholarship.applications}</TableCell>
+                        <TableCell>
+                          <Badge variant={scholarship.status === 'active' ? 'default' : 'secondary'}>
+                            {scholarship.status === 'active' ? '🟢 Actif' : '🔴 Inactif'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => openEditDialog(scholarship)}
+                          >
+                            Modifier
+                          </Button>
+                          <Button 
+                            variant={scholarship.status === 'active' ? 'outline' : 'default'} 
+                            size="sm"
+                            onClick={() => toggleScholarshipStatus(scholarship.id)}
+                          >
+                            {scholarship.status === 'active' ? 'Désactiver' : 'Activer'}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Statistiques des Bourses</CardTitle>
+                  <CardDescription>Vue d'ensemble des bourses et candidatures</CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-6 border rounded-lg bg-gradient-to-br from-purple-50 to-white">
+                    <div className="text-3xl font-bold text-purple-600">{stats.activeScholarships}</div>
+                    <p className="text-sm text-muted-foreground">Bourses actives</p>
+                  </div>
+                  <div className="p-6 border rounded-lg bg-gradient-to-br from-blue-50 to-white">
+                    <div className="text-3xl font-bold text-blue-600">{stats.scholarshipApplications}</div>
+                    <p className="text-sm text-muted-foreground">Candidatures reçues</p>
+                  </div>
+                  <div className="p-6 border rounded-lg bg-gradient-to-br from-green-50 to-white">
+                    <div className="text-3xl font-bold text-green-600">{stats.scholarshipMatches}</div>
+                    <p className="text-sm text-muted-foreground">Bourses attribuées</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="feedback" className="space-y-6">
@@ -365,6 +551,140 @@ const AdminView: React.FC = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Scholarship Form Dialog */}
+      <Dialog open={isScholarshipDialogOpen || !!editingScholarship} onOpenChange={(open) => {
+        if (!open) {
+          setIsScholarshipDialogOpen(false);
+          setEditingScholarship(null);
+        }
+      }}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>{editingScholarship ? 'Modifier la bourse' : 'Nouvelle bourse'}</DialogTitle>
+            <DialogDescription>
+              {editingScholarship ? 'Modifiez les détails de la bourse.' : 'Remplissez les détails de la nouvelle bourse.'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="title" className="text-sm font-medium">Titre de la bourse</label>
+              <Input
+                id="title"
+                placeholder="Ex: Bourse d'excellence"
+                value={editingScholarship?.title || newScholarship.title || ''}
+                onChange={(e) => {
+                  if (editingScholarship) {
+                    setEditingScholarship({...editingScholarship, title: e.target.value});
+                  } else {
+                    setNewScholarship({...newScholarship, title: e.target.value});
+                  }
+                }}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="amount" className="text-sm font-medium">Montant</label>
+              <Input
+                id="amount"
+                placeholder="Ex: 5000 DZD/mois"
+                value={editingScholarship?.amount || newScholarship.amount || ''}
+                onChange={(e) => {
+                  if (editingScholarship) {
+                    setEditingScholarship({...editingScholarship, amount: e.target.value});
+                  } else {
+                    setNewScholarship({...newScholarship, amount: e.target.value});
+                  }
+                }}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="deadline" className="text-sm font-medium">Date limite de candidature</label>
+              <Input
+                id="deadline"
+                type="date"
+                value={editingScholarship?.deadline || newScholarship.deadline || ''}
+                onChange={(e) => {
+                  if (editingScholarship) {
+                    setEditingScholarship({...editingScholarship, deadline: e.target.value});
+                  } else {
+                    setNewScholarship({...newScholarship, deadline: e.target.value});
+                  }
+                }}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="description" className="text-sm font-medium">Description</label>
+              <Textarea
+                id="description"
+                placeholder="Décrivez la bourse en détail..."
+                rows={4}
+                value={editingScholarship?.description || newScholarship.description || ''}
+                onChange={(e) => {
+                  if (editingScholarship) {
+                    setEditingScholarship({...editingScholarship, description: e.target.value});
+                  } else {
+                    setNewScholarship({...newScholarship, description: e.target.value});
+                  }
+                }}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="requirements" className="text-sm font-medium">Conditions requises</label>
+              <Textarea
+                id="requirements"
+                placeholder="Listez les conditions d'éligibilité..."
+                rows={3}
+                value={editingScholarship?.requirements || newScholarship.requirements || ''}
+                onChange={(e) => {
+                  if (editingScholarship) {
+                    setEditingScholarship({...editingScholarship, requirements: e.target.value});
+                  } else {
+                    setNewScholarship({...newScholarship, requirements: e.target.value});
+                  }
+                }}
+              />
+            </div>
+            
+            {editingScholarship && (
+              <div className="space-y-2">
+                <label htmlFor="status" className="text-sm font-medium">Statut</label>
+                <select
+                  id="status"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={editingScholarship.status}
+                  onChange={(e) => setEditingScholarship({...editingScholarship, status: e.target.value as 'active' | 'inactive'})}
+                >
+                  <option value="active">Actif</option>
+                  <option value="inactive">Inactif</option>
+                </select>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsScholarshipDialogOpen(false);
+                setEditingScholarship(null);
+              }}
+            >
+              Annuler
+            </Button>
+            <Button 
+              onClick={editingScholarship ? handleUpdateScholarship : handleAddScholarship}
+              disabled={!editingScholarship?.title && !newScholarship.title}
+            >
+              {editingScholarship ? 'Enregistrer les modifications' : 'Créer la bourse'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

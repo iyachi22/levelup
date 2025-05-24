@@ -35,11 +35,16 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ onLogout }) => {
               <ProfileDropdown 
                 user={{
                   name: 'Entreprise Demo',
-                  email: 'entreprise@demo.com',
+                  email: 'contact@entreprise-dz.dz',
                   role: 'company',
                   avatarFallback: 'CO',
+                  avatarUrl: 'https://api.dicebear.com/7.x/shapes/svg?seed=Company',
                   status: 'active',
-                  lastLogin: 'Aujourd\'hui, 19:45'
+                  lastLogin: 'Aujourd\'hui, 19:45',
+                  accountCreated: '01/01/2024',
+                  emailVerified: true,
+                  phone: '+213 23 45 67 89',
+                  location: 'Alger, Algérie'
                 }}
                 onLogout={onLogout}
               />

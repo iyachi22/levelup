@@ -40,10 +40,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 user={{
                   name: 'Utilisateur Demo',
                   email: 'utilisateur@demo.com',
-                  role: 'user',
+                  role: 'student',
                   avatarFallback: 'UD',
+                  avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=User',
                   status: 'active',
-                  lastLogin: 'Aujourd\'hui, 19:45'
+                  lastLogin: 'Aujourd\'hui, 19:45',
+                  accountCreated: '15/05/2024',
+                  emailVerified: true,
+                  phone: '+213 123 456 789',
+                  location: 'Alger, Algérie'
                 }}
                 onLogout={onLogout}
               />
